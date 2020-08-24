@@ -3,6 +3,9 @@ package com.uzitech.uhome;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.util.Base64;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.CompositePageTransformer;
@@ -21,15 +24,19 @@ public class Dashboard extends AppCompatActivity {
     List<JSONObject> tiles;
     ViewPager2 main_tiles;
     tilesAdapter adapter;
+    TextView tile_title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        main_tiles = findViewById(R.id.main_app_list);
+        float density = getResources().getDisplayMetrics().density;
 
-        setUI();
+        main_tiles = findViewById(R.id.main_app_list);
+        tile_title = findViewById(R.id.tile_title);
+
+        setUI(density);
 
         tiles = new ArrayList<>();
 
@@ -43,13 +50,20 @@ public class Dashboard extends AppCompatActivity {
         main_tiles.setClipChildren(false);
         main_tiles.setOffscreenPageLimit(3);
         CompositePageTransformer compositePageTransformer = new CompositePageTransformer();
-        compositePageTransformer.addTransformer(new MarginPageTransformer(16));
+        compositePageTransformer.addTransformer(new MarginPageTransformer((int) (density*16)));
         main_tiles.setPageTransformer(compositePageTransformer);
 
+        main_tiles.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                try {
+                    tile_title.setText(tiles.get(position).getString("name"));
+                }catch (Exception ignored){}
+            }
+        });
     }
 
-    private void setUI() {
-        float density = getResources().getDisplayMetrics().density;
+    private void setUI(float density) {
         float width = getResources().getDisplayMetrics().widthPixels;
         int hor_padd = (int) ((width - (300*density)) / 2);
 
