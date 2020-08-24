@@ -8,27 +8,17 @@
     app:cardCornerRadius="16dp">
 
     <LinearLayout
+        android:id="@+id/tile_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/tile_icon"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="72dp"
-            android:layout_gravity="center"
-            app:srcCompat="@drawable/app_icon" />
-
-        <TextView
-            android:id="@+id/tile_name"
-            android:visibility="gone"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:textAlignment="center"
-            android:text="Settings"
-            android:textSize="24sp" />
+            android:adjustViewBounds="true" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

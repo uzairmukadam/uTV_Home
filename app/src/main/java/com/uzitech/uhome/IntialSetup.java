@@ -1,11 +1,11 @@
 package com.uzitech.uhome;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,9 +19,9 @@ public class IntialSetup extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_intial_setup);
-        
+
         getAllApps();
-        
+
         startDashboard();
     }
 
@@ -34,11 +34,10 @@ public class IntialSetup extends AppCompatActivity {
         Collections.sort(appList, new ResolveInfo.DisplayNameComparator(packageManager));
         packageNames = new ArrayList<>();
 
-        for(int i=0; i<appList.size(); i++){
+        for (int i = 0; i < appList.size(); i++) {
             ResolveInfo app = appList.get(i);
             String packName = app.activityInfo.packageName;
-            String[] prefix = packName.split(".");
-            if(packName.contains("org.")){ //replace org with uos
+            if (packName.substring(0, 4).contains("utv")) { //replace org with utv
                 packageNames.add(packName);
             }
         }

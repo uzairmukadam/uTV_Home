@@ -53,9 +53,11 @@ public class tilesAdapter extends RecyclerView.Adapter<tilesAdapter.adapterViewH
                 @Override
                 public void onClick(View view) {
                     try {
-                        /*
-                        Intent appIntent = packageManager.getLaunchIntentForPackage(appObj.getString("intent"));
-                        activity.startActivity(appIntent);*/
+                        Intent appIntent;
+                        if(!appObj.getString("pkg_name").equals("NONE")){
+                            appIntent = packageManager.getLaunchIntentForPackage(appObj.getString("pkg_name"));
+                            activity.startActivity(appIntent);
+                        }
                         Toast.makeText(activity, appObj.getString("name"), Toast.LENGTH_SHORT).show();
                     }catch (Exception ignored){}
                 }
@@ -75,7 +77,6 @@ public class tilesAdapter extends RecyclerView.Adapter<tilesAdapter.adapterViewH
         public adapterViewHolder(@NonNull View itemView) {
             super(itemView);
             tile_icon = itemView.findViewById(R.id.tile_icon);
-            tile_name = itemView.findViewById(R.id.tile_name);
         }
     }
 

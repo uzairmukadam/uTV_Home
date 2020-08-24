@@ -1,9 +1,8 @@
 package com.uzitech.uhome;
 
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.view.View;
+import android.os.Parcel;
+import android.util.Base64;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.CompositePageTransformer;
@@ -55,31 +54,24 @@ public class Dashboard extends AppCompatActivity {
         int hor_padd = (int) ((width - (300*density)) / 2);
 
         main_tiles.setPadding(hor_padd, 0, hor_padd, 0);
-
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
     }
 
     private void addTiles() {
-        tiles.add(JsonObj("Videos", "movies"));
-        tiles.add(JsonObj("Music", "music"));
-        tiles.add(JsonObj("Photos", "photos"));
-        tiles.add(JsonObj("Games", "games"));
-        tiles.add(JsonObj("Store", "store"));
-        tiles.add(JsonObj("All Apps", "all_apps"));
-        tiles.add(JsonObj("Settings", "settings"));
+        tiles.add(JsonObj("Videos", "movies", "NONE"));
+        tiles.add(JsonObj("Music", "music", "utv.uzitech.umusic"));
+        tiles.add(JsonObj("Photos", "photos", "NONE"));
+        tiles.add(JsonObj("Games", "games", "NONE"));
+        tiles.add(JsonObj("Store", "store", "NONE"));
+        tiles.add(JsonObj("All Apps", "all_apps", "NONE"));
+        tiles.add(JsonObj("Settings", "settings", "NONE"));
     }
 
-    private JSONObject JsonObj(String name, String icon) {
+    private JSONObject JsonObj(String name, String icon, String pkg_name) {
         JSONObject object = new JSONObject();
         try{
             object.put("name", name);
             object.put("icon", icon);
+            object.put("pkg_name", pkg_name);
         }catch (Exception ignored){}
         return object;
     }
