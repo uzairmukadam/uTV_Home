@@ -37,7 +37,7 @@ public class IntialSetup extends AppCompatActivity {
         for (int i = 0; i < appList.size(); i++) {
             ResolveInfo app = appList.get(i);
             String packName = app.activityInfo.packageName;
-            if (packName.substring(0, 4).contains("utv")) { //replace org with utv
+            if (packName.substring(0, 4).contains("utv")) {
                 packageNames.add(packName);
             }
         }
