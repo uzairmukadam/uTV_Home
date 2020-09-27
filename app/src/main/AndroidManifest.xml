@@ -23,12 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <receiver android:name=".Dashboard$BroadcastReceive">
-            <intent-filter>
-                <action android:name="utv.uzitech.remote_input" />
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

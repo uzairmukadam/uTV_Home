@@ -1,16 +1,13 @@
 package com.uzitech.uhome;
 
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
+import android.os.Handler;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.CompositePageTransformer;
 import androidx.viewpager2.widget.MarginPageTransformer;
@@ -25,12 +22,14 @@ import java.util.List;
 
 public class Dashboard extends AppCompatActivity {
 
-    static List<JSONObject> tiles;
-    static ViewPager2 main_tiles;
+    List<JSONObject> tiles;
+    ViewPager2 main_tiles;
     tilesAdapter adapter;
-    TextView tile_title;
+    TextView tile_title, dash_guide;
 
-    static int pos_tile = 0;
+    BroadcastReceiver input_receiver, message_receiver;
+
+    int pos_tile = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +40,8 @@ public class Dashboard extends AppCompatActivity {
 
         main_tiles = findViewById(R.id.main_app_list);
         tile_title = findViewById(R.id.tile_title);
+
+        dash_guide = findViewById(R.id.dash_guide);
 
         setUI(density);
 
@@ -68,6 +69,54 @@ public class Dashboard extends AppCompatActivity {
                 }
             }
         });
+
+        input_receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String input = intent.getStringExtra("Remote_Input");
+                assert input != null;
+                switch (input) {
+                    case "D_LEFT":
+                        if (pos_tile != 0) {
+                            pos_tile -= 1;
+                        }
+                        break;
+                    case "D_RIGHT":
+                        if (pos_tile != tiles.size() - 1) {
+                            pos_tile += 1;
+                        }
+                        break;
+                    case "D_ENTER":
+                        performClickAction(context);
+                        break;
+                }
+                main_tiles.setCurrentItem(pos_tile);
+            }
+        };
+
+        message_receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                final String[] text = intent.getStringArrayExtra("notification");
+                assert text != null;
+                dash_guide.setText(text[0]);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        dash_guide.setText(text[1]);
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                dash_guide.setText("");
+                            }
+                        }, Integer.parseInt(text[2]));
+                    }
+                }, 1000);
+            }
+        };
+
+        registerReceiver(input_receiver, new IntentFilter("utv.uzitech.remote_input"));
+        registerReceiver(message_receiver, new IntentFilter("utv.uzitech.dash_noti"));
     }
 
     private void setUI(float density) {
@@ -98,7 +147,7 @@ public class Dashboard extends AppCompatActivity {
         return object;
     }
 
-    public static void performClickAction(Context context) {
+    public void performClickAction(Context context) {
         try {
             Intent appIntent;
             JSONObject appObj = tiles.get(pos_tile);
@@ -110,45 +159,18 @@ public class Dashboard extends AppCompatActivity {
         }
     }
 
-    public static class BroadcastReceive extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String input = intent.getStringExtra("Remote_Input");
-            assert input != null;
-            switch (input) {
-                case "D_LEFT":
-                    if (pos_tile != 0) {
-                        pos_tile -= 1;
-                    }
-                    break;
-                case "D_RIGHT":
-                    if (pos_tile != tiles.size() - 1) {
-                        pos_tile += 1;
-                    }
-                    break;
-                case "D_ENTER":
-                    performClickAction(context);
-                    break;
-            }
-            main_tiles.setCurrentItem(pos_tile);
-        }
-    }
-
     @Override
     protected void onPause() {
-        PackageManager pm = getPackageManager();
-        ComponentName componentName = new ComponentName(this, BroadcastReceive.class);
-        pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+        unregisterReceiver(input_receiver);
+        unregisterReceiver(message_receiver);
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         main_tiles.setCurrentItem(pos_tile);
-        PackageManager pm = getPackageManager();
-        ComponentName componentName = new ComponentName(this, BroadcastReceive.class);
-        pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+        registerReceiver(input_receiver, new IntentFilter("utv.uzitech.remote_input"));
+        registerReceiver(message_receiver, new IntentFilter("utv.uzitech.dash_noti"));
         super.onResume();
     }
 }
