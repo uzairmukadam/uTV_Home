@@ -44,7 +44,7 @@ public class IntialSetup extends AppCompatActivity {
     }
 
     private void startDashboard() {
-        startActivity(new Intent(this, Dashboard2.class));
+        startActivity(new Intent(this, Dashboard.class));
         finish();
     }
 }
