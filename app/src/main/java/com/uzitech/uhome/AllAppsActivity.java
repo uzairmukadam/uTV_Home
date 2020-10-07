@@ -188,10 +188,4 @@ public class AllAppsActivity extends AppCompatActivity {
         unregisterReceiver(input_receiver);
         super.onPause();
     }
-
-    @Override
-    protected void onDestroy() {
-        unregisterReceiver(input_receiver);
-        super.onDestroy();
-    }
 }
