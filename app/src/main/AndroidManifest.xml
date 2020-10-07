@@ -10,6 +10,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
+            android:name=".AllAppsActivity"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".SettingsActivity"
+            android:screenOrientation="landscape" />
+        <activity
             android:name=".Dashboard"
             android:screenOrientation="landscape" />
         <activity

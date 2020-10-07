@@ -129,8 +129,8 @@ public class Dashboard extends AppCompatActivity {
                 nativeApps.add(createCard(JsonObj(app[0], app[1], app[2])));
             }
         }
-        nativeApps.add(createCard(JsonObj("All Apps", "all_apps", "NONE_allApps")));
-        nativeApps.add(createCard(JsonObj("Settings", "settings", "NONE_settings")));
+        nativeApps.add(createCard(JsonObj("All Apps", "all_apps", "NONE_com.uzitech.uhome.AllAppsActivity")));
+        nativeApps.add(createCard(JsonObj("Settings", "settings", "NONE_com.uzitech.uhome.SettingsActivity")));
 
         ArrayList<JSONObject> category_list = database.getAllCategory();
         ArrayList<JSONObject> category_apps = database.getAllApps();
@@ -224,9 +224,13 @@ public class Dashboard extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     Intent appIntent;
-                    if (!object.getString("pkg_name").equals("NONE")) {
+                    if (object.has("pkg_name")) {
                         appIntent = getPackageManager().getLaunchIntentForPackage(object.getString("pkg_name"));
                         startActivity(appIntent);
+                    } else {
+                        Class<?> className = Class.forName(object.getString("class_name"));
+                        Intent intent = new Intent(getApplicationContext(), className);
+                        startActivity(intent);
                     }
                 } catch (Exception e) {
                     Log.d(TAG, e.toString());
@@ -246,7 +250,7 @@ public class Dashboard extends AppCompatActivity {
             object.put("name", name);
             object.put("icon", icon);
             if (pkg_name.startsWith("NONE_")) {
-                object.put("class_name", pkg_name.substring(4));
+                object.put("class_name", pkg_name.substring(5));
             } else {
                 object.put("pkg_name", pkg_name);
             }
