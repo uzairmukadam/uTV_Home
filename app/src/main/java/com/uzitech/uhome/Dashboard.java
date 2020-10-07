@@ -1,74 +1,65 @@
 package com.uzitech.uhome;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.widget.TextView;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.viewpager2.widget.CompositePageTransformer;
-import androidx.viewpager2.widget.MarginPageTransformer;
-import androidx.viewpager2.widget.ViewPager2;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
-import com.uzitech.uhome.Adapters.tilesAdapter;
+import com.uzitech.uhome.Adapters.DatabaseAdapter;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Dashboard extends AppCompatActivity {
 
-    List<JSONObject> tiles;
-    ViewPager2 main_tiles;
-    tilesAdapter adapter;
-    TextView tile_title, dash_guide;
+    private String TAG = "Dashboard";
 
-    BroadcastReceiver input_receiver, message_receiver;
-
-    int pos_tile = 0;
+    ArrayList<ArrayList<CardView>> allApps;
+    ArrayList<HorizontalScrollView> category;
+    ArrayList<LinearLayout> app_list;
+    ScrollView category_holder;
+    float density;
+    BroadcastReceiver input_receiver;
+    int margin, category_index = 0;
+    int[] list_index;
+    DatabaseAdapter database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_dashboard);
+        setContentView(R.layout.activity_dashboard2);
 
-        float density = getResources().getDisplayMetrics().density;
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
 
-        main_tiles = findViewById(R.id.main_app_list);
-        tile_title = findViewById(R.id.tile_title);
+        database = new DatabaseAdapter(getApplicationContext());
 
-        dash_guide = findViewById(R.id.dash_guide);
+        category_holder = findViewById(R.id.category_holder);
 
-        setUI(density);
+        density = getResources().getDisplayMetrics().density;
+        margin = (int) density * 8;
 
-        tiles = new ArrayList<>();
+        setApps();
 
-        addTiles();
-
-        adapter = new tilesAdapter(this, tiles, getPackageManager());
-
-        main_tiles.setAdapter(adapter);
-
-        main_tiles.setClipToPadding(false);
-        main_tiles.setClipChildren(false);
-        main_tiles.setOffscreenPageLimit(3);
-        CompositePageTransformer compositePageTransformer = new CompositePageTransformer();
-        compositePageTransformer.addTransformer(new MarginPageTransformer((int) (density * 16)));
-        main_tiles.setPageTransformer(compositePageTransformer);
-
-        main_tiles.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                try {
-                    tile_title.setText(tiles.get(position).getString("name"));
-                } catch (Exception ignored) {
-                }
-            }
-        });
+        setCategory();
+        selectCard();
 
         input_receiver = new BroadcastReceiver() {
             @Override
@@ -77,63 +68,176 @@ public class Dashboard extends AppCompatActivity {
                 assert input != null;
                 switch (input) {
                     case "D_LEFT":
-                        if (pos_tile != 0) {
-                            pos_tile -= 1;
+                        if (list_index[category_index] != 0) {
+                            list_index[category_index] -= 1;
+                            selectCard();
                         }
                         break;
                     case "D_RIGHT":
-                        if (pos_tile != tiles.size() - 1) {
-                            pos_tile += 1;
+                        if (list_index[category_index] != app_list.get(category_index).getChildCount() - 1) {
+                            list_index[category_index] += 1;
+                            selectCard();
+                        }
+                        break;
+                    case "D_UP":
+                        if (category_index != 0) {
+                            category_index -= 1;
+                            setCategory();
+                        }
+                        break;
+                    case "D_DOWN":
+                        if (category_index != category.size() - 1) {
+                            category_index += 1;
+                            setCategory();
                         }
                         break;
                     case "D_ENTER":
-                        performClickAction(context);
+                        app_list.get(category_index).getChildAt(list_index[category_index]).performClick();
                         break;
                 }
-                main_tiles.setCurrentItem(pos_tile);
-            }
-        };
-
-        message_receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                final String[] text = intent.getStringArrayExtra("notification");
-                assert text != null;
-                dash_guide.setText(text[0]);
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        dash_guide.setText(text[1]);
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                dash_guide.setText("");
-                            }
-                        }, Integer.parseInt(text[2]));
-                    }
-                }, 1000);
             }
         };
 
         registerReceiver(input_receiver, new IntentFilter("utv.uzitech.remote_input"));
-        registerReceiver(message_receiver, new IntentFilter("utv.uzitech.dash_noti"));
     }
 
-    private void setUI(float density) {
-        float width = getResources().getDisplayMetrics().widthPixels;
-        int hor_padd = (int) ((width - (200 * density)) / 2);
+    private void selectCard() {
+        for (int i = 0; i < app_list.get(category_index).getChildCount(); i++) {
+            CardView temp = (CardView) app_list.get(category_index).getChildAt(i);
+            temp.setScaleX(0.9f);
+            temp.setScaleY(0.9f);
+        }
 
-        main_tiles.setPadding(hor_padd, 0, hor_padd, 0);
+        CardView temp = (CardView) app_list.get(category_index).getChildAt(list_index[category_index]);
+        temp.setScaleX(1);
+        temp.setScaleY(1);
+        category.get(category_index).smoothScrollTo(temp.getLeft() - margin, 0);
     }
 
-    private void addTiles() {
-        tiles.add(JsonObj("Videos", "movies", "NONE"));
-        tiles.add(JsonObj("Music", "music", "utv.uzitech.umusic"));
-        tiles.add(JsonObj("Photos", "photos", "NONE"));
-        tiles.add(JsonObj("Games", "games", "NONE"));
-        tiles.add(JsonObj("Store", "store", "NONE"));
-        tiles.add(JsonObj("All Apps", "all_apps", "NONE"));
-        tiles.add(JsonObj("Settings", "settings", "NONE"));
+    private void setCategory() {
+        category_holder.smoothScrollTo(0, category.get(category_index).getTop() - margin);
+    }
+
+    private void setApps() {
+
+        ArrayList<CardView> nativeApps = new ArrayList<>();
+        String[][] pkg_data = new String[][]{{"Videos", "movies", "utv.uzitech.umovies"},
+                {"Music", "music", "utv.uzitech.umusic"}, {"Photos", "photos", "utv.uzitech.umovies"},
+                {"Games", "games", "utv.uzitech.ugames"}, {"Store", "store", "utv.uzitech.ustore"}};
+        for (String[] app : pkg_data) {
+            if (packageInstalled(app[2])) {
+                nativeApps.add(createCard(JsonObj(app[0], app[1], app[2])));
+            }
+        }
+        nativeApps.add(createCard(JsonObj("All Apps", "all_apps", "NONE_allApps")));
+        nativeApps.add(createCard(JsonObj("Settings", "settings", "NONE_settings")));
+
+        ArrayList<JSONObject> category_list = database.getAllCategory();
+        ArrayList<JSONObject> category_apps = database.getAllApps();
+
+        ArrayList<ArrayList<CardView>> separated_apps = new ArrayList<>();
+
+        for (JSONObject category : category_list) {
+            ArrayList<CardView> temp = new ArrayList<>();
+            try {
+                int id = category.getInt("id");
+                for (JSONObject app : category_apps) {
+                    if (app.getInt("id") == id) {
+                        temp.add(createCard(app));
+                        category_apps.remove(app);
+                    }
+                }
+                separated_apps.add(temp);
+            } catch (Exception e) {
+                Log.d(TAG, e.toString());
+            }
+        }
+
+        category = new ArrayList<>();
+        app_list = new ArrayList<>();
+        allApps = new ArrayList<>();
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, margin, 0, margin);
+
+        if (separated_apps.size() > 0) {
+            if (separated_apps.get(0).size() > 0) {
+                //fav row
+                createCategory(separated_apps.get(0), params);
+                separated_apps.remove(0);
+            }
+        }
+        //native row
+        createCategory(nativeApps, params);
+
+        for (ArrayList<CardView> category : separated_apps) {
+            if (category.size() > 0) {
+                createCategory(category, params);
+            }
+        }
+
+        LinearLayout category_layout = findViewById(R.id.category_holder_layout);
+        for (HorizontalScrollView view : category) {
+            category_layout.addView(view);
+        }
+
+        list_index = new int[category.size()];
+    }
+
+    private void createCategory(ArrayList<CardView> cards, LinearLayout.LayoutParams params) {
+        try {
+            HorizontalScrollView scrollView = new HorizontalScrollView(getApplicationContext());
+            LinearLayout layout = new LinearLayout(getApplicationContext());
+            layout.setOrientation(LinearLayout.HORIZONTAL);
+            for (CardView cardView : cards) {
+                layout.addView(cardView);
+            }
+            scrollView.addView(layout);
+            scrollView.setHorizontalScrollBarEnabled(false);
+            scrollView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            scrollView.setLayoutParams(params);
+            category.add(scrollView);
+            app_list.add(layout);
+            allApps.add(cards);
+        } catch (Exception e) {
+            Log.d(TAG, e.toString());
+        }
+    }
+
+    private CardView createCard(final JSONObject object) {
+        LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        @SuppressLint("InflateParams") CardView layout = (CardView) inflater.inflate(R.layout.app_tile, null);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams((int) (density * 200), (int) (density * 100));
+
+        try {
+            ImageView icon = layout.findViewById(R.id.tile_icon);
+
+            if (!object.getString("icon").isEmpty()) {
+                icon.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(),
+                        getResources().getIdentifier(object.getString("icon"), "drawable", getPackageName())));
+            }//else add app icon
+        } catch (Exception e) {
+            Log.d(TAG, e.toString());
+        }
+
+        layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent appIntent;
+                    if (!object.getString("pkg_name").equals("NONE")) {
+                        appIntent = getPackageManager().getLaunchIntentForPackage(object.getString("pkg_name"));
+                        startActivity(appIntent);
+                    }
+                } catch (Exception e) {
+                    Log.d(TAG, e.toString());
+                }
+            }
+        });
+
+        params.setMargins(margin, 0, margin, 0);
+        layout.setLayoutParams(params);
+
+        return layout;
     }
 
     private JSONObject JsonObj(String name, String icon, String pkg_name) {
@@ -141,36 +245,35 @@ public class Dashboard extends AppCompatActivity {
         try {
             object.put("name", name);
             object.put("icon", icon);
-            object.put("pkg_name", pkg_name);
-        } catch (Exception ignored) {
+            if (pkg_name.startsWith("NONE_")) {
+                object.put("class_name", pkg_name.substring(4));
+            } else {
+                object.put("pkg_name", pkg_name);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, e.toString());
         }
         return object;
     }
 
-    public void performClickAction(Context context) {
+    private boolean packageInstalled(String pkg) {
         try {
-            Intent appIntent;
-            JSONObject appObj = tiles.get(pos_tile);
-            if (!appObj.getString("pkg_name").equals("NONE")) {
-                appIntent = context.getPackageManager().getLaunchIntentForPackage(appObj.getString("pkg_name"));
-                context.startActivity(appIntent);
-            }
-        } catch (Exception ignored) {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return true;
         }
     }
 
     @Override
     protected void onPause() {
         unregisterReceiver(input_receiver);
-        unregisterReceiver(message_receiver);
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        main_tiles.setCurrentItem(pos_tile);
         registerReceiver(input_receiver, new IntentFilter("utv.uzitech.remote_input"));
-        registerReceiver(message_receiver, new IntentFilter("utv.uzitech.dash_noti"));
         super.onResume();
     }
 }

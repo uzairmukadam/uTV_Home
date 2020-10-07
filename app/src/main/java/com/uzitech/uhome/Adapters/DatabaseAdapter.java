@@ -15,7 +15,8 @@ public class DatabaseAdapter extends SQLiteOpenHelper {
 
     private final String TAG = "Database";
 
-    private String table = "favourite_tiles";
+    private String category_table = "category";
+    private String category_apps = "favourite_tiles";
 
     public DatabaseAdapter(Context context) {
         super(context, "uTV_Home.db", null, 1);
@@ -23,42 +24,73 @@ public class DatabaseAdapter extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL("create table " + table + "(ID NAME UNIQUE, ICON TEXT, PKG TEXT)");
+        sqLiteDatabase.execSQL("create table " + category_table + "(ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, NAME TEXT UNIQUE)");
+        sqLiteDatabase.execSQL("insert into " + category_table + " values (0, \"Favourite\")");
+        sqLiteDatabase.execSQL("create table " + category_apps + "(CATEGORY_ID INTEGER, NAME TEXT UNIQUE, ICON TEXT, PKG TEXT UNIQUE)");
+        Log.d(TAG, "Tables created");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("drop table if exists " + table);
+        sqLiteDatabase.execSQL("drop table if exists " + category_table);
+        sqLiteDatabase.execSQL("drop table if exists " + category_apps);
         onCreate(sqLiteDatabase);
     }
 
-    public void addFav(String name, String pkg, String icon) {
+    public void addApp(int id, String name, String icon, String pkg) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put("ID", name);
-        contentValues.put("PKG", pkg);
+        contentValues.put("ID", id);
+        contentValues.put("NAME", name);
         contentValues.put("ICON", icon);
-        database.insert(table, null, contentValues);
+        contentValues.put("PKG", pkg);
+        database.insert(category_apps, null, contentValues);
         Log.d(TAG, "App added");
     }
 
-    public void removeFav(String pkg) {
+    public void removeApp(int id, String pkg) {
         SQLiteDatabase database = this.getWritableDatabase();
-        database.delete(table, "PKG = \"" + pkg + "\"", null);
+        database.delete(category_apps, "CATEGORY_ID = \"" + id + "\" AND PKG = \"" + pkg + "\"", null);
         Log.d(TAG, "App removed");
     }
 
-    public ArrayList<JSONObject> getAllFav() {
+    public void removeCategory(int id) {
+        SQLiteDatabase database = this.getWritableDatabase();
+        database.delete(category_table, "ID = \"" + id + "\"", null);
+        Log.d(TAG, "Category removed");
+    }
+
+    public ArrayList<JSONObject> getAllApps() {
         ArrayList<JSONObject> temp = new ArrayList<>();
         SQLiteDatabase database = this.getReadableDatabase();
-        Cursor res = database.rawQuery("select * from " + table, null);
+        Cursor res = database.rawQuery("select * from " + category_apps, null);
 
         while (res.moveToNext()) {
             try {
                 JSONObject object = new JSONObject();
-                object.put("name", res.getString(0));
-                object.put("icon", res.getString(1));
-                object.put("pkg_name", res.getString(2));
+                object.put("id", res.getInt(0));
+                object.put("name", res.getString(1));
+                object.put("icon", res.getString(2));
+                object.put("pkg_name", res.getString(3));
+                temp.add(object);
+            } catch (Exception e) {
+                Log.d(TAG, e.toString());
+            }
+        }
+        res.close();
+        return temp;
+    }
+
+    public ArrayList<JSONObject> getAllCategory() {
+        ArrayList<JSONObject> temp = new ArrayList<>();
+        SQLiteDatabase database = this.getReadableDatabase();
+        Cursor res = database.rawQuery("select * from " + category_table, null);
+
+        while (res.moveToNext()) {
+            try {
+                JSONObject object = new JSONObject();
+                object.put("id", res.getInt(0));
+                object.put("name", res.getString(1));
                 temp.add(object);
             } catch (Exception e) {
                 Log.d(TAG, e.toString());
