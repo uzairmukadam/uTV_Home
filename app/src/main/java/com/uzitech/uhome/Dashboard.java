@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +19,7 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -36,7 +40,10 @@ public class Dashboard extends AppCompatActivity {
     ArrayList<LinearLayout> app_list;
     ScrollView category_holder;
     float density;
-    BroadcastReceiver input_receiver;
+    BroadcastReceiver input_receiver, notification_receiver;
+    LinearLayout notification_box;
+    ImageView notification_icon;
+    TextView notification_text;
     int margin, category_index = 0;
     int[] list_index;
     DatabaseAdapter database;
@@ -53,6 +60,10 @@ public class Dashboard extends AppCompatActivity {
 
         category_holder = findViewById(R.id.category_holder);
 
+        notification_box = findViewById(R.id.notif_box);
+        notification_icon = findViewById(R.id.notif_icon);
+        notification_text = findViewById(R.id.notif_text);
+
         density = getResources().getDisplayMetrics().density;
         margin = (int) density * 8;
 
@@ -60,6 +71,8 @@ public class Dashboard extends AppCompatActivity {
 
         setCategory();
         selectCard();
+
+        handleNotification(new String[]{"Welcome"});
 
         input_receiver = new BroadcastReceiver() {
             @Override
@@ -98,7 +111,62 @@ public class Dashboard extends AppCompatActivity {
             }
         };
 
+        notification_receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String[] notif = intent.getStringArrayExtra("Notification");
+                assert notif != null;
+                handleNotification(notif);
+            }
+        };
+
         registerReceiver(input_receiver, new IntentFilter("utv.uzitech.remote_input"));
+        registerReceiver(notification_receiver, new IntentFilter("utv.uzitech.dash_notif"));
+    }
+
+    private void handleNotification(final String[] notif) {
+        TransitionManager.beginDelayedTransition(notification_box, new AutoTransition());
+        if(notif.length > 2){
+            notification_icon.setImageDrawable(ContextCompat.getDrawable(getApplicationContext()
+            , getResources().getIdentifier(notif[2], "drawable", getPackageName())));
+        }else {
+            notification_icon.setImageDrawable(ContextCompat.getDrawable(getApplicationContext()
+                    , getResources().getIdentifier("default_notif", "drawable", getPackageName())));
+        }
+
+        notification_box.setVisibility(View.VISIBLE);
+
+        notification_text.setText(notif[0]);
+
+        if(notif.length > 1){
+
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    TransitionManager.beginDelayedTransition(notification_box, new AutoTransition());
+                    notification_text.setText(notif[1]);
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            TransitionManager.beginDelayedTransition(notification_box, new AutoTransition());
+                            notification_box.setVisibility(View.GONE);
+                            notification_text.setText("");
+                        }
+                    }, 2000);
+                }
+            }, 2000);
+        } else {
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    TransitionManager.beginDelayedTransition(notification_box, new AutoTransition());
+                    notification_box.setVisibility(View.GONE);
+                    notification_text.setText("");
+                }
+            }, 2000);
+        }
     }
 
     private void selectCard() {

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">uTV Home</string>
     <string name="app_icon_desc">App Icon</string>
+    <string name="notification_icon_desc">Notification icon</string>
 </resources>
